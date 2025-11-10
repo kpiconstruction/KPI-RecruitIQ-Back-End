@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/act/public_html/recruitiq.automatedconetruck.com.au/backend/
+    - /bin/cp -R * $DEPLOYPATH
