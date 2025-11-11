@@ -1,4 +1,4 @@
-name: Deploy React App to cPanel via API
+name: Deploy Backend to cPanel
 
 on:
   push:
@@ -6,63 +6,36 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy-backend:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+      # Zip backend files
+      - name: Zip backend files
+        run: zip -r backend.zip . -x ".git/*" ".github/*"
 
-      # 3. Install dependencies
-      - name: Install dependencies
-        run: npm install
-
-      # 4. Build React app
-      - name: Build React app
-        run: npm run build
-
-      # 5. Zip build folder
-      - name: Zip build folder
-        run: zip -r build.zip build
-
-      # 6. Clear old files in subdomain folder
-      - name: Clear old files
+      # Upload ZIP to cPanel
+      - name: Upload backend ZIP
         run: |
           curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
-            -F "dir=/public_html/recruitiq.automatedconetruck.com.au" \
-            "https://${{ secrets.CPANEL_IP }}:2083/execute/Fileman/delete" \
-            --data-urlencode "files[]=index.php" \
-            --data-urlencode "files[]=index.html" \
-            --data-urlencode "files[]=bundles" \
-            --data-urlencode "files[]=css" \
-            --data-urlencode "files[]=images"
-
-      # 7. Upload ZIP to cPanel
-      - name: Upload ZIP to cPanel
-        run: |
-          curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
-            -F "file=@build.zip" \
-            -F "dir=/public_html/recruitiq.automatedconetruck.com.au" \
+            -F "file=@backend.zip" \
+            -F "dir=/public_html/recruitiq-backend" \
             "https://${{ secrets.CPANEL_IP }}:2083/execute/Fileman/upload_files"
 
-      # 8. Extract ZIP on server
-      - name: Extract ZIP on cPanel
+      # Extract ZIP on server
+      - name: Extract backend ZIP
         run: |
           curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
-            -F "sourcefile=/public_html/recruitiq.automatedconetruck.com.au/build.zip" \
-            -F "destdir=/public_html/recruitiq.automatedconetruck.com.au" \
+            -F "sourcefile=/public_html/recruitiq-backend/backend.zip" \
+            -F "destdir=/public_html/recruitiq-backend" \
             "https://${{ secrets.CPANEL_IP }}:2083/execute/Fileman/extract_archive"
 
-      # 9. Delete ZIP after extraction
-      - name: Delete ZIP
+      # Delete ZIP after extraction
+      - name: Delete backend ZIP
         run: |
           curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
-            -F "file=/public_html/recruitiq.automatedconetruck.com.au/build.zip" \
+            -F "file=/public_html/recruitiq-backend/backend.zip" \
             "https://${{ secrets.CPANEL_IP }}:2083/execute/Fileman/delete"
