@@ -1,4 +1,4 @@
-name: Backend Deploy to cPanel
+name: Deploy React App to cPanel via API
 
 on:
   push:
@@ -6,32 +6,63 @@ on:
       - main
 
 jobs:
-  backend-deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      # 1. Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: PHP Syntax Check
-        run: |
-          sudo apt-get update
-          sudo apt-get install php-cli -y
-          find . -name "*.php" -exec php -l {} \;
-
-      - name: Deploy backend files via SFTP
-        uses: appleboy/scp-action@v0.1.4
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          host: 65.254.93.21
-          username: ${{ secrets.CPANEL_SSH_USERNAME }} # e.g., act
-          password: ${{ secrets.CPANEL_SSH_PASSWORD }} # your cPanel password
-          source: "./"
-          target: "/home/${{ secrets.CPANEL_SSH_USERNAME }}/public_html/recruitiq-backend/"
-          rm: true
-          strip_components: 0
-          exclude: |
-            node_modules
-            dist
-            build
-            .git
-            .github
+          node-version: '18'
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Build React app
+      - name: Build React app
+        run: npm run build
+
+      # 5. Zip build folder
+      - name: Zip build folder
+        run: zip -r build.zip build
+
+      # 6. Clear old files in subdomain folder
+      - name: Clear old files
+        run: |
+          curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
+            -F "dir=/public_html/recruitiq.automatedconetruck.com.au" \
+            "https://${{ secrets.CPANEL_IP }}:2083/execute/Fileman/delete" \
+            --data-urlencode "files[]=index.php" \
+            --data-urlencode "files[]=index.html" \
+            --data-urlencode "files[]=bundles" \
+            --data-urlencode "files[]=css" \
+            --data-urlencode "files[]=images"
+
+      # 7. Upload ZIP to cPanel
+      - name: Upload ZIP to cPanel
+        run: |
+          curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
+            -F "file=@build.zip" \
+            -F "dir=/public_html/recruitiq.automatedconetruck.com.au" \
+            "https://${{ secrets.CPANEL_IP }}:2083/execute/Fileman/upload_files"
+
+      # 8. Extract ZIP on server
+      - name: Extract ZIP on cPanel
+        run: |
+          curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
+            -F "sourcefile=/public_html/recruitiq.automatedconetruck.com.au/build.zip" \
+            -F "destdir=/public_html/recruitiq.automatedconetruck.com.au" \
+            "https://${{ secrets.CPANEL_IP }}:2083/execute/Fileman/extract_archive"
+
+      # 9. Delete ZIP after extraction
+      - name: Delete ZIP
+        run: |
+          curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
+            -F "file=/public_html/recruitiq.automatedconetruck.com.au/build.zip" \
+            "https://${{ secrets.CPANEL_IP }}:2083/execute/Fileman/delete"
