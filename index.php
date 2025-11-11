@@ -1,5 +1,6 @@
 <?php
-// RecruitIQ placeholder page
-echo "<h1>RecruitIQ is live!</h1>";
-echo "<p>If you see this message, your deployment is working.</p>";
-?>
+// RecruitIQ Backend Entry Point
+require_once __DIR__ . '/config/bootstrap.php'; // Load your app bootstrap
+
+// If accessed directly, show a simple message
+echo "RecruitIQ Backend API is running.";
