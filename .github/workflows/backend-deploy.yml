@@ -10,24 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Zip backend files
+      # Zip backend files
       - name: Zip backend files
         run: zip -r backend.zip . -x ".git/*" ".github/*"
 
-      # 3. Delete all old files in backend folder
+      # Clear old files (use -d only)
       - name: Clear old files
         run: |
           curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
-            -F "dir=/public_html/recruitiq-backend" \
-            "https://${{ secrets.CPANEL_SSH_HOST }}:2083/execute/Fileman/delete" \
-            --data-urlencode "files[]=*" \
-            --data-urlencode "skiptrash=1"
+            -d "dir=/public_html/recruitiq-backend" \
+            -d "files[]=*" \
+            -d "skiptrash=1" \
+            "https://${{ secrets.CPANEL_SSH_HOST }}:2083/execute/Fileman/delete"
 
-      # 4. Upload ZIP to cPanel
+      # Upload ZIP (use -F for file upload)
       - name: Upload backend ZIP
         run: |
           curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
@@ -35,17 +34,17 @@ jobs:
             -F "dir=/public_html/recruitiq-backend" \
             "https://${{ secrets.CPANEL_SSH_HOST }}:2083/execute/Fileman/upload_files"
 
-      # 5. Extract ZIP on server
+      # Extract ZIP
       - name: Extract backend ZIP
         run: |
           curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
-            -F "sourcefile=/public_html/recruitiq-backend/backend.zip" \
-            -F "destdir=/public_html/recruitiq-backend" \
+            -d "sourcefile=/public_html/recruitiq-backend/backend.zip" \
+            -d "destdir=/public_html/recruitiq-backend" \
             "https://${{ secrets.CPANEL_SSH_HOST }}:2083/execute/Fileman/extract_archive"
 
-      # 6. Delete ZIP after extraction
+      # Delete ZIP
       - name: Delete backend ZIP
         run: |
           curl -u "${{ secrets.CPANEL_USERNAME }}:${{ secrets.CPANEL_PASSWORD }}" \
-            -F "file=/public_html/recruitiq-backend/backend.zip" \
+            -d "file=/public_html/recruitiq-backend/backend.zip" \
             "https://${{ secrets.CPANEL_SSH_HOST }}:2083/execute/Fileman/delete"
