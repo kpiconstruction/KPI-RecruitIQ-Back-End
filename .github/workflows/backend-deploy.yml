@@ -19,23 +19,14 @@ jobs:
           sudo apt-get install php-cli -y
           find . -name "*.php" -exec php -l {} \;
 
-      - name: Clean old backend files on server
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.CPANEL_SSH_HOST }}
-          username: ${{ secrets.CPANEL_SSH_USERNAME }}
-          key: ${{ secrets.CPANEL_SSH_PRIVATE_KEY }}
-          script: |
-            rm -rf /home/your-cpanel-username/public_html/recruitiq-backend/*
-
       - name: Deploy backend files via SFTP
         uses: appleboy/scp-action@v0.1.4
         with:
-          host: ${{ secrets.CPANEL_SSH_HOST }}
-          username: ${{ secrets.CPANEL_SSH_USERNAME }}
-          key: ${{ secrets.CPANEL_SSH_PRIVATE_KEY }}
+          host: 65.254.93.21
+          username: ${{ secrets.CPANEL_SSH_USERNAME }} # e.g., act
+          password: ${{ secrets.CPANEL_SSH_PASSWORD }} # your cPanel password
           source: "./"
-          target: "/home/your-cpanel-username/public_html/recruitiq-backend/"
+          target: "/home/${{ secrets.CPANEL_SSH_USERNAME }}/public_html/recruitiq-backend/"
           rm: true
           strip_components: 0
           exclude: |
