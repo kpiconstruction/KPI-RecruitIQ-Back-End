@@ -1,0 +1,46 @@
+name: Backend Deploy to cPanel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  backend-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: PHP Syntax Check
+        run: |
+          sudo apt-get update
+          sudo apt-get install php-cli -y
+          find . -name "*.php" -exec php -l {} \;
+
+      - name: Clean old backend files on server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.CPANEL_SSH_HOST }}
+          username: ${{ secrets.CPANEL_SSH_USERNAME }}
+          key: ${{ secrets.CPANEL_SSH_PRIVATE_KEY }}
+          script: |
+            rm -rf /home/your-cpanel-username/public_html/recruitiq-backend/*
+
+      - name: Deploy backend files via SFTP
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.CPANEL_SSH_HOST }}
+          username: ${{ secrets.CPANEL_SSH_USERNAME }}
+          key: ${{ secrets.CPANEL_SSH_PRIVATE_KEY }}
+          source: "./"
+          target: "/home/your-cpanel-username/public_html/recruitiq-backend/"
+          rm: true
+          strip_components: 0
+          exclude: |
+            node_modules
+            dist
+            build
+            .git
+            .github
