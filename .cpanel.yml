@@ -1,8 +1,5 @@
----
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/act/public_html/recruitiq.automatedconetruck.com.au/backend/
+    - export DEPLOYPATH=/home/act/public_html/recruitiq/api
+    - /bin/mkdir -p $DEPLOYPATH
     - /bin/cp -R * $DEPLOYPATH
-    - /bin/rm -rf $DEPLOYPATH/.git
-    - /bin/chmod -R 755 $DEPLOYPATH
-    - /usr/bin/composer install --no-dev --optimize-autoloader --working-dir=$DEPLOYPATH

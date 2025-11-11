@@ -1,15 +1,11 @@
-# Disable directory listing
-Options -Indexes
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Force index.php as the default page
-DirectoryIndex index.php
+<FilesMatch "^(\.env|composer\.json|database\.sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
 
-# Ensure PHP handler is active
-AddHandler application/x-httpd-php .php
-
-# Security headers
-<IfModule mod_headers.c>
-    Header set X-Content-Type-Options "nosniff"
-    Header set X-Frame-Options "SAMEORIGIN"
-    Header set X-XSS-Protection "1; mode=block"
-</IfModule>
+RewriteCond %{REQUEST_URI} ^/api
+RewriteRule ^api/(.*)$ api/$1 [L]
